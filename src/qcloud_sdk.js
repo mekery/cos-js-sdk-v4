@@ -19,6 +19,8 @@
         this._uploadingThreadCount = 0;
         this.tasks = [];
 
+        this.fileType = 0;
+
         if (opt.getAppSign) {
             this.getAppSign = getEncodeFn(opt.getAppSign, this);
         }
@@ -34,7 +36,7 @@
                     s = encodeURIComponent(s);
                 }
                 callback(s);
-            });
+            }, context.fileType);
         };
     }
 
@@ -355,8 +357,12 @@
         this.tasks[taskId] = globalTask;
         taskReady && typeof taskReady === 'function' && taskReady(taskId);
 
-        that.getAppSign(function (sign) {
-            var url = that.getCgiUrl(remotePath, sign);
+        var filetype = fileType(file.type);
+        that.fileType = filetype;
+        that.getAppSign(function (signRes) {
+            that.bucket = signRes.bucket
+            var remotePath = fixPath(signRes.path + signRes.id + fileExtension(file.name));
+            var url = that.getCgiUrl(remotePath, signRes.sign);
             var formData = new FormData();
             insertOnly = insertOnly === 0 ? 0 : 1;
             formData.append('op', 'upload');
@@ -381,9 +387,13 @@
                     return xhr;
 
                 },
-                success: function () {
+                success: function (res) {
                     if (globalTask.state === 'cancel') return;
-                    success.apply(this, arguments);
+                    // success.apply(this, arguments);
+                    res.data.path = remotePath
+                    res.data.id = signRes.id
+                    res.data.type = filetype;
+                    success(res);
                 },
                 error: function () {
                     if (globalTask.state === 'cancel') return;
@@ -415,7 +425,11 @@
 
         var that = this;
         remotePath = fixPath(remotePath);
-        that.getAppSign(function (sign) {
+        that.getAppSign(function (response) {
+            console.log('sign res', response)
+            var remotePath = response.path + response.id + fileExtension(file.name);
+            remotePath = fixPath(remotePath);
+
             var opt = {};
             opt.globalTask = globalTask;
             if (opt.globalTask.state === 'cancel') return;
@@ -426,7 +440,7 @@
             opt.insertOnly = insertOnly === 0 ? 0 : 1;
             opt.sliceSize = optSliceSize || 1024 * 1024;//分片不设置的话固定1M大小
             opt.appid = that.appid;
-            opt.sign = sign;
+            opt.sign = 'eee';
             opt.biz_attr = bizAttr || '';
             opt.onprogress = function (uploaded, sha1Check) {
                 if (sha1Check === undefined) sha1Check = 1;
@@ -463,6 +477,7 @@
 
                         sliceUpload.call(that, opt).done(function () {
                             sliceFinish.call(that, opt).done(function (r) {
+                                r.data.path = remotePath
                                 success(r);
                             }).fail(function (d) {
                                 error({code: -1, message: d && d.message || 'slice finish error'});
@@ -483,6 +498,7 @@
                     if (typeof opt.onprogress === 'function') {
                         opt.onprogress(1, 0);
                     }
+                    res.data.path = remotePath
                     success(res);
                 } else { // 之前没上传，进行sliceInit开启上传
                     getSliceSHA1.call(that, opt).done(function (uploadparts) {
@@ -502,9 +518,11 @@
                                 if (typeof opt.onprogress === 'function') {
                                     opt.onprogress(1, 0);
                                 }
+                                res.data.path = remotePath
                                 success(res);
                             } else {
                                 sliceFinish.call(that, opt).done(function (r) {
+                                    r.data.path = remotePath
                                     success(r);
                                 }).fail(function (d) {
                                     error({
@@ -572,6 +590,29 @@
         }
 
         return path;
+    }
+    
+    //文件后缀
+    function fileExtension(filename) {
+        var ext = "";
+        var splits = filename.split(".");
+        if (splits.length > 1) {
+            ext = "." + splits[splits.length - 1];
+        }
+
+        return ext;
+    }
+
+    function fileType(mimeType) {
+        var type = 0;
+        var splits = mimeType.split("/");
+        var name = splits[0]
+        if (name === 'image') {
+            type = 1;
+        } else if (name === 'video') {
+            type = 2
+        }
+        return type;
     }
 
     var REM_SHA1_KEY = '_cos_sdk_sha1_';
@@ -961,9 +1002,9 @@
 
         var file = opt.file;
 
-        that.getAppSign(function (sign) {
+        that.getAppSign(function (res) {
 
-            opt.sign = sign;
+            opt.sign = res.sign;
             var url = that.getCgiUrl(opt.path, opt.sign);
 
             var formData = new FormData();
@@ -1018,9 +1059,9 @@
         var defer = $.Deferred();
         var file = opt.file;
 
-        that.getAppSign(function (sign) {
+        that.getAppSign(function (res) {
 
-            opt.sign = sign;
+            opt.sign = res.sign;
             var session = opt.session;
 
             var url = that.getCgiUrl(opt.path, opt.sign);

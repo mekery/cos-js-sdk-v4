@@ -16,11 +16,11 @@
 
             //TODO 以下几个值请确保填上再调用示例里的sdk方法
             //具体可以到https://console.qcloud.com/cos 进行查看
-            var bucket = 'test';
-            var appid = '1250000000';
-            var sid = 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx';
-            var skey = 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx';
-            var region = 'gz';
+            var bucket = 'donote';
+            var appid = '1251833402';
+            var sid = 'AKIDKRlXWAkXnPfwqvQBo1jrrOU4EeePqUhh';
+            var skey = 'pf41iScLaHdcwdoiqUfJD1FfxqPPsPMO';
+            var region = 'sh';
             //TODO 以上几个值请确保填上再调用示例里的sdk方法
 
             var myFolder = '/';//需要操作的目录
@@ -31,24 +31,27 @@
                 appid: appid, // APPID 必填参数
                 bucket: bucket, // bucketName 必填参数
                 region: region, // 地域信息 必填参数 华南地区填gz 华东填sh 华北填tj
-                getAppSign: function (callback) {//获取签名 必填参数
-
+                getAppSign: function (callback, t = 0) {//获取签名 必填参数
+                    console.log('filetype', t)
                     // 方法一（推荐线上使用）：搭建鉴权服务器，构造请求参数获取签名，推荐实际线上业务使用，优点是安全性好，不会暴露自己的私钥
-                    // $.get('../server/auth.php', callback);
+                    $.get('http://localhost:22999/cloud/sign', {fileType: t, path: self.path}, function(data) {
+                        console.log(data)
+                        callback(data)
+                    });
 
                     // 方法二（前端调试使用）：直接在浏览器前端计算签名，需要获取自己的accessKey和secretKey, 一般在调试阶段使用
-                    var self = this;
-                    var random = parseInt(Math.random() * Math.pow(2, 32));
-                    var now = parseInt(Date.now() / 1000);
-                    var e = now + 600; //签名过期时间为当前+600s
-                    var path = ''; //多次签名这里填空
-                    var str = 'a=' + self.appid + '&k=' + sid + '&e=' + e + '&t=' + now + '&r=' + random + '&f=' + path + '&b=' + self.bucket;
-                    var sha1Res = CryptoJS.HmacSHA1(str, skey); // 这里使用CryptoJS计算sha1值，你也可以用其他开源库或自己实现
-                    var strWordArray = CryptoJS.enc.Utf8.parse(str);
-                    var resWordArray = sha1Res.concat(strWordArray);
-                    var res = resWordArray.toString(CryptoJS.enc.Base64);
+                    // var self = this;
+                    // var random = parseInt(Math.random() * Math.pow(2, 32));
+                    // var now = parseInt(Date.now() / 1000);
+                    // var e = now + 600; //签名过期时间为当前+600s
+                    // var path = ''; //多次签名这里填空
+                    // var str = 'a=' + self.appid + '&k=' + sid + '&e=' + e + '&t=' + now + '&r=' + random + '&f=' + path + '&b=' + self.bucket;
+                    // var sha1Res = CryptoJS.HmacSHA1(str, skey); // 这里使用CryptoJS计算sha1值，你也可以用其他开源库或自己实现
+                    // var strWordArray = CryptoJS.enc.Utf8.parse(str);
+                    // var resWordArray = sha1Res.concat(strWordArray);
+                    // var res = resWordArray.toString(CryptoJS.enc.Base64);
 
-                    callback(res);
+                    // callback(res);
 
                 },
                 getAppSignOnce: function (callback) {//单次签名，参考上面的注释即可
@@ -57,24 +60,24 @@
                     // $.get('../server/auth.php', {path: self.path}, callback);
 
                     // 方法二（前端调试使用）：直接在浏览器前端计算签名，需要获取自己的accessKey和secretKey, 一般在调试阶段使用
-                    var self = this;
-                    var random = parseInt(Math.random() * Math.pow(2, 32));
-                    var now = parseInt(Date.now() / 1000);
-                    var e = 0; // 单次签名 expire==0
-                    var path = self.path;
-                    var str = 'a=' + self.appid + '&k=' + sid + '&e=' + e + '&t=' + now + '&r=' + random + '&f=' + path + '&b=' + self.bucket;
-                    var sha1Res = CryptoJS.HmacSHA1(str, skey); // 这里使用CryptoJS计算sha1值，你也可以用其他开源库或自己实现
-                    var strWordArray = CryptoJS.enc.Utf8.parse(str);
-                    var resWordArray = sha1Res.concat(strWordArray);
-                    var res = resWordArray.toString(CryptoJS.enc.Base64);
+                    // var self = this;
+                    // var random = parseInt(Math.random() * Math.pow(2, 32));
+                    // var now = parseInt(Date.now() / 1000);
+                    // var e = 0; // 单次签名 expire==0
+                    // var path = self.path;
+                    // var str = 'a=' + self.appid + '&k=' + sid + '&e=' + e + '&t=' + now + '&r=' + random + '&f=' + path + '&b=' + self.bucket;
+                    // var sha1Res = CryptoJS.HmacSHA1(str, skey); // 这里使用CryptoJS计算sha1值，你也可以用其他开源库或自己实现
+                    // var strWordArray = CryptoJS.enc.Utf8.parse(str);
+                    // var resWordArray = sha1Res.concat(strWordArray);
+                    // var res = resWordArray.toString(CryptoJS.enc.Base64);
 
-                    callback(res);
+                    // callback(res);
 
                 }
             });
 
             var successCallBack = function (result) {
-                console.log('request success.');
+                console.log('request success.', result);
                 $("#result").val(JSON.stringify(result));
             };
 

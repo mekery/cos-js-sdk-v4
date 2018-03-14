@@ -22,7 +22,7 @@
   },
   "homepage": "https://github.com/tencentyun/cos-js-sdk-v4#readme",
   "devDependencies": {
-    "gulp": "^3.8.11",
+    "gulp": "^3.9.1",
     "gulp-concat": "^2.5.2",
     "gulp-footer": "^1.0.5",
     "gulp-header": "^1.8.8",
